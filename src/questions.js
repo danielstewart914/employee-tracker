@@ -26,6 +26,10 @@ const mainMenuQuestions = {
         {
             name: 'Add Department',
             value: 'add-dept'
+        },
+        {
+            name: 'Exit Application',
+            value: 'exit'
         }
     ],
     default: 0

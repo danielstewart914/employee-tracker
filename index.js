@@ -49,6 +49,12 @@ const mainMenu = async () => {
             case 'all-role': 
                 await getAllRoles( db );
                 mainMenu();
+            break;
+            case 'exit':
+                db.end();
+            break;
+            default:
+                console.log( 'Bad selection' );
         }
     }
 
