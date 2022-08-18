@@ -31,4 +31,4 @@ const mainMenuQuestions = {
     default: 0
 };
 
-module.exports = { mainMenuQuestions };
+module.exports = { mainMenuQuestions }; 

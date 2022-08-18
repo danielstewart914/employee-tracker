@@ -1,12 +1,16 @@
+// .env for keeping db password hidden
 require( 'dotenv' ).config();
 
+const { getAllEmployees, getAllDept, getAllRoles } = require( './src/db-queries' );
 const inquirer = require( 'inquirer' );
 const mysql = require( 'mysql2/promise' );
 const { mainMenuQuestions } = require( './src/questions' );
 
+let db;
+
 const init = async () => {
     try {
-        const db = await mysql.createConnection (
+        const connection = await mysql.createConnection (
             {
                 host: 'localhost',
                 user: 'root',
@@ -16,7 +20,7 @@ const init = async () => {
         );
     
         console.log( 'Connected to employee database' );
-
+        db = connection;
         mainMenu();
     }
 
@@ -30,6 +34,22 @@ const mainMenu = async () => {
         const answer = await inquirer.prompt( mainMenuQuestions );
         const { choice } = answer;
 
+        switch( choice ) {
+            case 'add-dept':
+                
+            break;
+            case 'all-dept':
+                await getAllDept( db );
+                mainMenu();
+            break;
+            case 'all-emp': 
+                await getAllEmployees( db );
+                mainMenu();
+            break;
+            case 'all-role': 
+                await getAllRoles( db );
+                mainMenu();
+        }
     }
 
     catch ( error ) {
