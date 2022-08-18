@@ -1,3 +1,4 @@
+const { printTable } = require('console-table-printer');
 const createTable = require( './createTable' );
 
 const allEmployeesQuery = 
@@ -24,30 +25,81 @@ const allRolesQuery =
     FROM role r 
     JOIN department d ON r.department_id = d.id`;
 
+const getAndDisplayAll = async ( db, dataType ) => {
+    let query;
+    let title;
 
-const getAllEmployees = async ( db ) => {
+    switch ( dataType ) {
+        case 'employees':
+            query = allEmployeesQuery;
+            title = 'All Employees';
+        break;
+        case 'departments':
+            query = allDeptQuery;
+            title = 'All Departments';
+        break;
+        case 'roles':
+            query = allRolesQuery;
+            title = 'All Roles';
+        break;
+        default:
+            console.error( 'Invalid type' );
+    }
 
-    const [ employees ] = await db.execute( allEmployeesQuery );
-    const employeeTable = createTable( 'All Employees', employees );
-    console.log( '\n' );
-    employeeTable.printTable();
-    console.log( '\n' );
+    try {
+        const [ data ] = await db.execute( query );
+        const dataTable = createTable( title, data );
+
+        console.log( '\n' );
+        dataTable.printTable();
+    }
+    catch ( error ) {
+        console.error( error );
+    }
 }
 
-const getAllDept = async ( db ) => {
-    const [ departments ] = await db.execute( allDeptQuery );
-    const deptTable = createTable( 'All Departments', departments );
-    console.log( '\n' );
-    deptTable.printTable();
-    console.log( '\n' );
+const getManagerChoice = async ( db ) => {
+    try {
+        const [ result ] = await db.execute( 'SELECT id AS value, CONCAT( first_name, \' \', last_name ) AS name FROM employee' );
+        return result;
+    }
+    catch ( error ) {
+        console.error( error );
+    }
 }
 
-const getAllRoles = async ( db ) => {
-    const [ roles ] = await db.execute( allRolesQuery );
-    const roleTable = createTable( 'All Roles', roles );
-    console.log( '\n' );
-    roleTable.printTable();
-    console.log( '\n' );
+const getDeptChoice = async ( db ) => {
+    try {
+        const [ result ] = await db.execute( 'SELECT id AS value, name FROM department' );
+        return result;
+    }
+    catch ( error ) {
+        console.error( error );
+    }
 }
 
-module.exports = { getAllEmployees, getAllDept, getAllRoles };
+
+const getRoleChoice = async ( db ) => {
+    try {
+        const [ result ] = await db.execute( 'SELECT id AS value, title AS name FROM role' );
+        return result;
+    }
+    catch ( error ) {
+        console.error( error );
+    }
+}
+
+const addDept = async ( db, name ) => {
+    try {
+        return await db.execute( 'INSERT INTO department ( name ) VALUES ( ? )', [ name ] );
+    }
+    catch ( error ) {
+        console.error( error );
+    }
+}
+
+const addEmployee = async ( db, data ) => {
+
+}
+
+module.exports = { getAndDisplayAll, getManagerChoice, getDeptChoice, getRoleChoice, addDept };
