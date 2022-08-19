@@ -16,6 +16,7 @@ CREATE TABLE role (
     title VARCHAR(30),
     salary DECIMAL,
     department_id INT,
+    manager_role BOOLEAN,
     PRIMARY KEY (id),
     FOREIGN KEY (department_id)
     REFERENCES department(id)

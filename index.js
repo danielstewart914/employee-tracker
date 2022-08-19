@@ -2,9 +2,6 @@
 require( 'dotenv' ).config();
 
 const { getAndDisplayAll,
-        getManagerChoice, 
-        getDeptChoice, 
-        getRoleChoice,
         addDept,
         addEmployee 
     } = require( './src/db-queries' );
