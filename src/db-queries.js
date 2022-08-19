@@ -98,8 +98,13 @@ const addDept = async ( db, name ) => {
     }
 }
 
-const addEmployee = async ( db, data ) => {
-
+const addEmployee = async ( db, employeeData ) => {
+    try {
+        return await db.execute( 'INSERT INTO employee ( first_name, last_name, role_id, manager_id ) VALUES ( ?, ?, ?, ? )', employeeData );
+    }
+    catch ( error ) {
+        console.error( error );
+    }
 }
 
-module.exports = { getAndDisplayAll, getManagerChoice, getDeptChoice, getRoleChoice, addDept };
+module.exports = { getAndDisplayAll, getManagerChoice, getDeptChoice, getRoleChoice, addDept, addEmployee };

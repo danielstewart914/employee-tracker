@@ -1,10 +1,17 @@
 // .env for keeping db password hidden
 require( 'dotenv' ).config();
 
-const { getAllEmployees, getAllDept, getAllRoles } = require( './src/db-queries' );
+const { getAndDisplayAll,
+        getManagerChoice, 
+        getDeptChoice, 
+        getRoleChoice,
+        addDept,
+        addEmployee 
+    } = require( './src/db-queries' );
+
 const inquirer = require( 'inquirer' );
 const mysql = require( 'mysql2/promise' );
-const { mainMenuQuestions } = require( './src/questions' );
+const { mainMenuQuestions, forDeptName, forEmployeeInfo } = require( './src/questions' );
 
 let db;
 
@@ -21,6 +28,7 @@ const init = async () => {
     
         console.log( 'Connected to employee database' );
         db = connection;
+
         mainMenu();
     }
 
@@ -36,19 +44,55 @@ const mainMenu = async () => {
 
         switch( choice ) {
             case 'add-dept':
-                
+                try {
+                    const { name } = await inquirer.prompt( forDeptName );
+                    await addDept( db, name );
+                    console.log( `\'${ name }\' Has been added to Departments.`, '\n' );
+                    mainMenu();
+                }
+                catch ( error ) {
+                    console.error( error );
+                }
             break;
             case 'all-dept':
-                await getAllDept( db );
-                mainMenu();
+                try {
+                    await getAndDisplayAll( db, 'departments' );
+                    mainMenu();
+                }
+                catch ( error ) {
+                    console.error( error );
+                }
+            break;
+            case 'add-emp':
+                try {
+                    const answers = await inquirer.prompt( await forEmployeeInfo( db ) );
+                    const employee = Object.values( answers );
+                    await addEmployee( db, employee );
+                    console.log( 'Employee has been added.', '\n' );
+                    mainMenu();
+                }
+                catch ( error ) {
+                    console.error( error );
+                }
             break;
             case 'all-emp': 
-                await getAllEmployees( db );
-                mainMenu();
+                try {
+                    await getAndDisplayAll( db, 'employees' );
+                    mainMenu();
+                    
+                }
+                catch ( error ) {
+                    console.error( error );
+                }
             break;
             case 'all-role': 
-                await getAllRoles( db );
-                mainMenu();
+                try {
+                    await getAndDisplayAll( db, 'roles' );
+                    mainMenu();
+                }
+                catch ( error ) {
+                    console.error( error );
+                }
             break;
             case 'exit':
                 db.end();
@@ -56,6 +100,7 @@ const mainMenu = async () => {
             default:
                 console.log( 'Bad selection' );
         }
+
     }
 
     catch ( error ) {
