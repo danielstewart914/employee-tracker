@@ -84,7 +84,50 @@ const questions = {
          ];
     
          return questions;
-    } 
+    },
+
+    roleInfo: async ( db ) => {
+        const questions = [
+            {
+                type: 'input',
+                name: 'title',
+                message: 'What is the title of this Role?',
+                validate: input => {
+                    if ( !input ) return 'Cannot be blank!';
+                    return true;
+                }
+            },
+            {
+                type: 'input',
+                name: 'salary',
+                message: 'What is the salary for this Role?',
+                validate: input => {
+                    const salaryRegEx = /^[$]?[\d,]+$/;
+                    if ( !salaryRegEx.test( input ) ) return 'That is not a valid salary!';
+                    return true;
+                },
+                filter: input => {
+                    const salaryIntString = input.replaceAll( '$', '' ).replaceAll( ',', '' );
+                    return parseInt( salaryIntString );
+                }
+            },
+            {
+                type: 'list',
+                name: 'department_id',
+                message: 'What Department does this Role belong to?',
+                choices: await getList.dept( db )
+            },
+            {
+                type: 'list',
+                name: 'manager_role',
+                message: 'Is this Role a managerial position?',
+                choices: [ { name: 'Yes', value: true }, { name: 'No', value: false } ]
+            }
+
+        ]
+
+        return questions;
+    }
 }
 
 module.exports = questions; 

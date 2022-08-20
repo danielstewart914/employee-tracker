@@ -29,43 +29,43 @@ const allRolesQuery =
     JOIN department d ON r.department_id = d.id`;
 
 
-const dbQueries = {
+const getAndDisplayAll = async ( db, dataType ) => {
+    const options = {
+        emp: {
+            query: allEmployeesQuery,
+            title: 'Employees'
+        },
+        dept: {
+            query: allDeptQuery,
+            title: 'Departments'
+        },
+        role: {
+            query: allRolesQuery,
+            title: 'Roles'
+        }
+    }
 
-    getAndDisplayAll: async ( db, dataType ) => {
-        const options = {
-            emp: {
-                query: allEmployeesQuery,
-                title: 'Employees'
-            },
-            dept: {
-                query: allDeptQuery,
-                title: 'Departments'
-            },
-            role: {
-                query: allRolesQuery,
-                title: 'Roles'
-            }
+    try {
+        // query database for data
+        const [ data ] = await db.execute( options[ dataType ].query );
+        // create formatted table from data
+        if ( !data.length ) {
+            console.log( `No ${ options[ dataType ].title } Saved in Database` );
+            return;
         }
-    
-        try {
-            // query database for data
-            const [ data ] = await db.execute( options[ dataType ].query );
-            // create formatted table from data
-            if ( !data.length ) {
-                console.log( `No ${ options[ dataType ].title } Saved in Database` );
-                return;
-            }
-    
-            const dataTable = createTable( options[ dataType ].title, data );
-    
-            console.log( '\n' );
-            dataTable.printTable();
-    
-        }
-        catch ( error ) {
-            console.error( error );
-        }
-    },
+
+        const dataTable = createTable( options[ dataType ].title, data );
+
+        console.log( '\n' );
+        dataTable.printTable();
+
+    }
+    catch ( error ) {
+        console.error( error );
+    }
+}
+
+const dbQueries = {
 
     addDept: async ( db ) => {
         try {
@@ -81,7 +81,7 @@ const dbQueries = {
         }
     },
     
-    addEmployee: async ( db ) => {
+    addEmp: async ( db ) => {
         try {
             const roles = await getList.roles( db );
             if ( !roles.length  ) {
@@ -111,16 +111,22 @@ const dbQueries = {
                 return;
             }
 
-            //TODO: add roles questions and db retrieval
+            const answers = await inquirer.prompt( await questions.roleInfo( db ) );
+
+            const roleData = Object.values( answers );
+
+            await db.execute( 'INSERT INTO role ( title, salary, department_id, manager_role ) VALUES ( ?, ?, ?, ? )', roleData );
+
+            console.log( `Role: \'${ answers.title }\' has been added.` )
         }
         catch ( error ) {
             console.error( error );
         }
     },
 
-    allEmp: db => dbQueries.getAndDisplayAll( db, 'emp' ),
-    allRole: db => dbQueries.getAndDisplayAll( db, 'role' ),
-    allDept: db => dbQueries.getAndDisplayAll( db, 'dept' ),
+    allEmp: db => getAndDisplayAll( db, 'emp' ),
+    allRole: db => getAndDisplayAll( db, 'role' ),
+    allDept: db => getAndDisplayAll( db, 'dept' ),
 }
 
 
