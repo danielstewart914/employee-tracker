@@ -6,8 +6,7 @@ const createTable = require( './createTable' );
 const allEmployeesQuery = 
     `SELECT 
     e.id, 
-    e.first_name, 
-    e.last_name, 
+    CONCAT( e.first_name, \' \', e.last_name ) AS name,
     title, 
     CONCAT( \'$\', FORMAT( salary, 2 ) ) AS annual_salary, 
     CONCAT( m.first_name, \' \', m.last_name ) AS manager 
@@ -67,21 +66,21 @@ const getAndDisplayAll = async ( db, dataType ) => {
 
 const dbQueries = {
 
-    addDept: async ( db ) => {
+    addDepartment: async ( db ) => {
         try {
             // prompt for department name
             const { name } = await inquirer.prompt( questions.deptName );
             // insert into database
             await db.execute( 'INSERT INTO department ( name ) VALUES ( ? )', [ name ] );
             // log success
-            console.log( `\'${ name }\' Has been added to Departments.`, '\n' );
+            console.log( '\n',`\'${ name }\' has been added to Departments.`, '\n' );
         }
         catch ( error ) {
             console.error( error );
         }
     },
     
-    addEmp: async ( db ) => {
+    addEmployee: async ( db ) => {
         try {
             const roles = await getList.roles( db );
             if ( !roles.length  ) {
@@ -96,7 +95,21 @@ const dbQueries = {
             // insert into database
             await db.execute( 'INSERT INTO employee ( first_name, last_name, role_id, manager_id ) VALUES ( ?, ?, ?, ? )', employeeData );
             // log success
-            console.log( `Employee: \'${ answers.first_name } ${ answers.last_name }\' has been added.`, '\n' );
+            console.log( '\n',`\'${ answers.first_name } ${ answers.last_name }\' has been added to Employees.`, '\n' );
+        }
+        catch ( error ) {
+            console.error( error );
+        }
+    },
+
+    updateEmployee: async ( db ) => {
+        try {
+            const  answers = await inquirer.prompt( await questions.updateEmployeeRole( db ) );
+
+            const  { id, role_id }  = answers;
+            await db.execute( 'UPDATE employee SET role_id = ? WHERE id = ?', [ role_id, id ] );
+            const [[ updated ]] = await db.execute( 'SELECT CONCAT( first_name, \' \', last_name ) AS name, title from employee e JOIN role r ON e.role_id = r.id WHERE e.id = ?', [ id ] );
+            console.log( '\n',`${ updated.name }'s Role has been updated to ${ updated.title }.`, '\n' );
         }
         catch ( error ) {
             console.error( error );
@@ -117,16 +130,16 @@ const dbQueries = {
 
             await db.execute( 'INSERT INTO role ( title, salary, department_id, manager_role ) VALUES ( ?, ?, ?, ? )', roleData );
 
-            console.log( `Role: \'${ answers.title }\' has been added.` )
+            console.log( '\n',`\'${ answers.title }\' has been added to Roles.`, '\n' );
         }
         catch ( error ) {
             console.error( error );
         }
     },
 
-    allEmp: db => getAndDisplayAll( db, 'emp' ),
-    allRole: db => getAndDisplayAll( db, 'role' ),
-    allDept: db => getAndDisplayAll( db, 'dept' ),
+    allEmployees: db => getAndDisplayAll( db, 'emp' ),
+    allRoles: db => getAndDisplayAll( db, 'role' ),
+    allDepartments: db => getAndDisplayAll( db, 'dept' ),
 }
 
 

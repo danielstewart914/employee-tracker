@@ -9,15 +9,19 @@ const questions = {
         choices: [ 
             {
                 name: 'View all Employees',
-                value: 'allEmp'
+                value: 'allEmployees'
             },
             {
                 name: 'Add Employee',
-                value: 'addEmp'
+                value: 'addEmployee'
+            },
+            {
+                name: 'Update Employee Role',
+                value: 'updateEmployee'
             },
             {
                 name: 'View all Roles',
-                value: 'allRole'
+                value: 'allRoles'
             },
             {
                 name: 'Add Role',
@@ -25,11 +29,11 @@ const questions = {
             },
             {
                 name: 'View all Departments',
-                value: 'allDept'
+                value: 'allDepartments'
             },
             {
                 name: 'Add Department',
-                value: 'addDept'
+                value: 'addDepartment'
             },
             {
                 name: 'Exit Application',
@@ -84,6 +88,24 @@ const questions = {
          ];
     
          return questions;
+    },
+
+    updateEmployeeRole: async ( db ) => {
+        const questions = [
+            {
+                type: 'list',
+                name: 'id',
+                message: 'Which Employee would you like to update?',
+                choices: await getList.employees( db )
+            },
+            {
+                type: 'list',
+                name: 'role_id',
+                message: 'Please select a new Role for this Employee.',
+                choices: await getList.roles( db )
+            }
+        ]
+        return questions;
     },
 
     roleInfo: async ( db ) => {
