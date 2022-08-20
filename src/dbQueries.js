@@ -102,7 +102,7 @@ const dbQueries = {
         }
     },
 
-    updateEmployee: async ( db ) => {
+    updateEmployeeRole: async ( db ) => {
         try {
             const  answers = await inquirer.prompt( await questions.updateEmployeeRole( db ) );
 
@@ -110,6 +110,25 @@ const dbQueries = {
             await db.execute( 'UPDATE employee SET role_id = ? WHERE id = ?', [ role_id, id ] );
             const [[ updated ]] = await db.execute( 'SELECT CONCAT( first_name, \' \', last_name ) AS name, title from employee e JOIN role r ON e.role_id = r.id WHERE e.id = ?', [ id ] );
             console.log( '\n',`${ updated.name }'s Role has been updated to ${ updated.title }.`, '\n' );
+        }
+        catch ( error ) {
+            console.error( error );
+        }
+    },
+
+    deleteEmployee: async ( db ) => {
+        try {
+            const answers = await inquirer.prompt( await questions.deleteEmployee( db ) );
+        
+            if ( !answers.confirm ) return;
+
+            const { id } = answers;
+            
+            const [[ { name }  ]] = await db.execute( `SELECT CONCAT( first_name, \' \', last_name ) AS name from employee WHERE id = ?`, [ id ] );
+            await db.execute( `DELETE FROM employee WHERE id = ?`, [ id ] );
+
+            console.log( '\n',`${ name } has been deleted.`, '\n' );
+
         }
         catch ( error ) {
             console.error( error );

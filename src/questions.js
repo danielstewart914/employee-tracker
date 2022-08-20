@@ -17,7 +17,11 @@ const questions = {
             },
             {
                 name: 'Update Employee Role',
-                value: 'updateEmployee'
+                value: 'updateEmployeeRole'
+            },
+            {
+                name: 'Delete Employee',
+                value: 'deleteEmployee'
             },
             {
                 name: 'View all Roles',
@@ -40,7 +44,8 @@ const questions = {
                 value: 'exit'
             }
         ],
-        default: 0
+        default: 0,
+        loop: false
     },
     
     deptName: {
@@ -77,13 +82,15 @@ const questions = {
                 type: 'list',
                 name: 'role_id',
                 message: 'Please select a Role for this Employee',
-                choices: await getList.roles( db )
+                choices: await getList.roles( db ),
+                loop: false
             },
             {
                 type: 'list',
                 name: 'manager_id',
                 message: 'Who is this Employee\'s Manger?',
-                choices: await getList.managers( db )
+                choices: await getList.managers( db ),
+                loop: false
             }
          ];
     
@@ -96,15 +103,37 @@ const questions = {
                 type: 'list',
                 name: 'id',
                 message: 'Which Employee would you like to update?',
-                choices: await getList.employees( db )
+                choices: await getList.employees( db ),
+                loop: false
             },
             {
                 type: 'list',
                 name: 'role_id',
                 message: 'Please select a new Role for this Employee.',
-                choices: await getList.roles( db )
+                choices: await getList.roles( db ),
+                loop: false
             }
         ]
+        return questions;
+    },
+
+    deleteEmployee: async ( db ) => {
+        const questions = [
+            {
+                type: 'list',
+                name: 'id',
+                message: 'Which Employee would you like to delete?',
+                choices: await getList.employees( db ),
+                loop:false
+            },
+            {
+                type: 'list',
+                name: 'confirm',
+                message: 'Are you sure you want to delete this Employee?',
+                choices: [ { name: 'Yes', value: true }, { name: 'No', value: false } ]
+            }
+        ]
+
         return questions;
     },
 
@@ -137,7 +166,8 @@ const questions = {
                 type: 'list',
                 name: 'department_id',
                 message: 'What Department does this Role belong to?',
-                choices: await getList.dept( db )
+                choices: await getList.dept( db ),
+                loop: false
             },
             {
                 type: 'list',
