@@ -12,6 +12,10 @@ const questions = {
                 value: 'allEmployees'
             },
             {
+                name: 'View Employees by Manager',
+                value: 'employeesByManager'
+            },
+            {
                 name: 'View all Managers',
                 value: 'allManagers'
             },
@@ -55,6 +59,19 @@ const questions = {
         default: 0,
         loop: false
     },
+
+    confirm: ( action, info ) => {
+        return [
+            {
+                type: 'list',
+                name: 'confirm',
+                message: `Are you sure you want to ${ action } this ${ info }?`,
+                choices: [ { name: 'Yes', value: true }, { name: 'No', value: false } ]
+            }
+        ]
+        
+        
+    },
     
     deptName: {
         type: 'input',
@@ -67,7 +84,7 @@ const questions = {
     },
 
     employeeInfo: async ( db ) => {
-        const questions = [ 
+        return [ 
             {
                 type: 'input',
                 name: 'first_name',
@@ -101,32 +118,34 @@ const questions = {
                 loop: false
             }
          ];
-    
-         return questions;
     },
 
-    updateEmployeeRole: async ( db ) => {
-        const questions = [
+    selectEmployeeToUpdate: async ( db ) => {
+        return [
             {
                 type: 'list',
                 name: 'id',
                 message: 'Which Employee would you like to update?',
                 choices: await getList.employees( db ),
                 loop: false
-            },
+            }
+        ]
+    },
+
+    selectNewRole: async ( db ) => {
+        return [
             {
                 type: 'list',
                 name: 'role_id',
-                message: 'Please select a new Role for this Employee.',
+                message: 'Select a new Role for this employee',
                 choices: await getList.roles( db ),
                 loop: false
             }
         ]
-        return questions;
     },
 
     deleteEmployee: async ( db ) => {
-        const questions = [
+        return [
             {
                 type: 'list',
                 name: 'id',
@@ -141,8 +160,6 @@ const questions = {
                 choices: [ { name: 'Yes', value: true }, { name: 'No', value: false } ]
             }
         ]
-
-        return questions;
     },
 
     roleInfo: async ( db ) => {
@@ -201,11 +218,16 @@ const questions = {
         ]
     },
 
-    confirmDeleteRole: {
-        type: 'list',
-        name: 'confirm',
-        message: 'Are you sure you want to delete this Role?',
-        choices: [ { name: 'Yes', value: true }, { name: 'No', value: false } ]
+    employeesByManager: async ( db ) => {
+        return [
+            { 
+                type: 'list',
+                name: 'id',
+                message: 'Please Select a manager.',
+                choices: await getList.managers( db, false ),
+                loop: false
+            }
+        ]  
     }
 }
 
