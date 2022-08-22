@@ -3,6 +3,8 @@ const questions = require( './questions' );
 const getList = require( './getList' );
 const createTable = require( './createTable' );
 
+
+// Database query strings for get and display all
 const allEmployeesQuery = 
     `SELECT 
     e.id, 
@@ -27,20 +29,36 @@ const allRolesQuery =
     FROM role r 
     JOIN department d ON r.department_id = d.id`;
 
+const allManagerQuery = 
+    `SELECT 
+    e.id, 
+    CONCAT( e.first_name, \' \', e.last_name ) AS name,
+    title, 
+    CONCAT( \'$\', FORMAT( salary, 2 ) ) AS annual_salary, 
+    CONCAT( m.first_name, \' \', m.last_name ) AS manager 
+    FROM employee e 
+    LEFT JOIN employee m ON e.manager_id = m.id 
+    LEFT JOIN role r ON e.role_id = r.id 
+    WHERE manager_role = true`;
 
+// get and display
 const getAndDisplayAll = async ( db, dataType ) => {
     const options = {
-        emp: {
+        employees: {
             query: allEmployeesQuery,
             title: 'Employees'
         },
-        dept: {
+        departments: {
             query: allDeptQuery,
             title: 'Departments'
         },
-        role: {
+        roles: {
             query: allRolesQuery,
             title: 'Roles'
+        },
+        managers: {
+            query: allManagerQuery,
+            title: 'Managers'
         }
     }
 
@@ -64,6 +82,7 @@ const getAndDisplayAll = async ( db, dataType ) => {
     }
 }
 
+// Database query object
 const dbQueries = {
 
     addDepartment: async ( db ) => {
@@ -82,6 +101,7 @@ const dbQueries = {
     
     addEmployee: async ( db ) => {
         try {
+            // check if there are roles to assign to employee
             const roles = await getList.roles( db );
             if ( !roles.length  ) {
                 console.log( 'You must have at least 1 Role before adding an Employee' );
@@ -104,9 +124,13 @@ const dbQueries = {
 
     updateEmployeeRole: async ( db ) => {
         try {
+            // prompt user for employee and new role
             const  { id, role_id } = await inquirer.prompt( await questions.updateEmployeeRole( db ) );
 
+            // set new role
             await db.execute( 'UPDATE employee SET role_id = ? WHERE id = ?', [ role_id, id ] );
+
+            // show confirmation message
             const [[ updated ]] = await db.execute( 'SELECT CONCAT( first_name, \' \', last_name ) AS name, title from employee e JOIN role r ON e.role_id = r.id WHERE e.id = ?', [ id ] );
             console.log( '\n',`${ updated.name }'s Role has been updated to ${ updated.title }.`, '\n' );
         }
@@ -117,13 +141,18 @@ const dbQueries = {
 
     deleteEmployee: async ( db ) => {
         try {
+            // query user for employee and a confirmation
             const { id, confirm } = await inquirer.prompt( await questions.deleteEmployee( db ) );
         
+            // if confirmation is negative return
             if ( !confirm ) return;
             
+            // retrieve employee name
             const [[ { name }  ]] = await db.execute( `SELECT CONCAT( first_name, \' \', last_name ) AS name from employee WHERE id = ?`, [ id ] );
+            // delete employee
             await db.execute( `DELETE FROM employee WHERE id = ?`, [ id ] );
 
+            // display success message
             console.log( '\n',`${ name } has been deleted.`, '\n' );
 
         }
@@ -174,9 +203,11 @@ const dbQueries = {
         }
     },
 
-    allEmployees: db => getAndDisplayAll( db, 'emp' ),
-    allRoles: db => getAndDisplayAll( db, 'role' ),
-    allDepartments: db => getAndDisplayAll( db, 'dept' ),
+    allEmployees: db => getAndDisplayAll( db, 'employees' ),
+    allRoles: db => getAndDisplayAll( db, 'roles' ),
+    allDepartments: db => getAndDisplayAll( db, 'departments' ),
+    allManagers: db => getAndDisplayAll( db, 'managers' ),
+
 }
 
 module.exports = { dbQueries };

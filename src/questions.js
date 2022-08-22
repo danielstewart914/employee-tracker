@@ -12,6 +12,10 @@ const questions = {
                 value: 'allEmployees'
             },
             {
+                name: 'View all Managers',
+                value: 'allManagers'
+            },
+            {
                 name: 'Add Employee',
                 value: 'addEmployee'
             },
@@ -93,7 +97,7 @@ const questions = {
                 type: 'list',
                 name: 'manager_id',
                 message: 'Who is this Employee\'s Manger?',
-                choices: await getList.managers( db ),
+                choices: await getList.managers( db, true ),
                 loop: false
             }
          ];
@@ -202,9 +206,7 @@ const questions = {
         name: 'confirm',
         message: 'Are you sure you want to delete this Role?',
         choices: [ { name: 'Yes', value: true }, { name: 'No', value: false } ]
-    },
-
-
+    }
 }
 
 module.exports = questions; 

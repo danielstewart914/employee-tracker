@@ -1,10 +1,10 @@
 const getList = {
 
-     managers: async ( db ) => {
+     managers: async ( db, includeNone ) => {
         try {
             const [ result ] = await db.execute( 'SELECT e.id AS value, CONCAT( first_name, \' \', last_name, \' - \', r.title ) AS name FROM employee e JOIN role r ON e.role_id = r.id WHERE manager_role = true' );
             // add option for no manager
-            result.push( { name: 'None', value: null } );
+            if ( includeNone ) result.push( { name: 'None', value: null } );
             return result;
         }
         catch ( error ) {
@@ -41,7 +41,8 @@ const getList = {
         catch ( error ) {
             console.error( error );
         }
-    }
+    },
+
 }
 
 module.exports = getList;
