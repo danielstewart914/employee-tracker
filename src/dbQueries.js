@@ -104,9 +104,8 @@ const dbQueries = {
 
     updateEmployeeRole: async ( db ) => {
         try {
-            const  answers = await inquirer.prompt( await questions.updateEmployeeRole( db ) );
+            const  { id, role_id } = await inquirer.prompt( await questions.updateEmployeeRole( db ) );
 
-            const  { id, role_id }  = answers;
             await db.execute( 'UPDATE employee SET role_id = ? WHERE id = ?', [ role_id, id ] );
             const [[ updated ]] = await db.execute( 'SELECT CONCAT( first_name, \' \', last_name ) AS name, title from employee e JOIN role r ON e.role_id = r.id WHERE e.id = ?', [ id ] );
             console.log( '\n',`${ updated.name }'s Role has been updated to ${ updated.title }.`, '\n' );
@@ -118,11 +117,9 @@ const dbQueries = {
 
     deleteEmployee: async ( db ) => {
         try {
-            const answers = await inquirer.prompt( await questions.deleteEmployee( db ) );
+            const { id, confirm } = await inquirer.prompt( await questions.deleteEmployee( db ) );
         
-            if ( !answers.confirm ) return;
-
-            const { id } = answers;
+            if ( !confirm ) return;
             
             const [[ { name }  ]] = await db.execute( `SELECT CONCAT( first_name, \' \', last_name ) AS name from employee WHERE id = ?`, [ id ] );
             await db.execute( `DELETE FROM employee WHERE id = ?`, [ id ] );
@@ -156,13 +153,30 @@ const dbQueries = {
         }
     },
 
+    deleteRole: async ( db ) => {
+        try {
+            const { id } = await inquirer.prompt( await questions.deleteRole( db ) );
+            const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE role_id = ?', [ id ] );
+            if ( count ) {
+
+                console.log( `Deleting this Role will effect ${ count } employees.` );
+
+                const { confirm } = await inquirer.prompt( questions.confirmDeleteRole );
+                
+                if ( !confirm ) return;
+            }
+            
+            await db.execute( 'DELETE FROM role WHERE id = ?', [ id ] );
+            console.log( 'Role has been deleted' );
+        }
+        catch ( error ) {
+            console.error( error );
+        }
+    },
+
     allEmployees: db => getAndDisplayAll( db, 'emp' ),
     allRoles: db => getAndDisplayAll( db, 'role' ),
     allDepartments: db => getAndDisplayAll( db, 'dept' ),
 }
-
-
-
-
 
 module.exports = { dbQueries };

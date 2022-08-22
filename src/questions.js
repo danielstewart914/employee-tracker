@@ -32,6 +32,10 @@ const questions = {
                 value: 'addRole'
             },
             {
+                name: 'Delete Role',
+                value: 'deleteRole'
+            },
+            {
                 name: 'View all Departments',
                 value: 'allDepartments'
             },
@@ -179,7 +183,28 @@ const questions = {
         ]
 
         return questions;
-    }
+    },
+
+    deleteRole: async ( db ) =>{
+        return [
+            {
+                type: 'list',
+                name: 'id',
+                message: 'Which Role would you like to delete?',
+                choices: await getList.roles( db ),
+                loop: false
+            }
+        ]
+    },
+
+    confirmDeleteRole: {
+        type: 'list',
+        name: 'confirm',
+        message: 'Are you sure you want to delete this Role?',
+        choices: [ { name: 'Yes', value: true }, { name: 'No', value: false } ]
+    },
+
+
 }
 
 module.exports = questions; 

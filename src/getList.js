@@ -14,7 +14,7 @@ const getList = {
 
     employees: async ( db ) => {
         try {
-            const [ result ] = await db.execute( 'SELECT e.id AS value, CONCAT( first_name, \' \', last_name, \' - \', r.title ) AS name FROM employee e JOIN role r ON e.role_id = r.id' );
+            const [ result ] = await db.execute( 'SELECT e.id AS value, CONCAT( first_name, \' \', last_name, \' - \', IFNULL( r.title, \'No Role\' ) ) AS name FROM employee e LEFT JOIN role r ON e.role_id = r.id' );
             return result;
         }
         catch ( error ) {
