@@ -172,7 +172,7 @@ const dbQueries = {
             const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE manager_id = ?', [ id ] );
 
             if ( count ) {
-                console.log( `This manager has ${ count } employees assign to them. This action will unassign these ${ count } employees` );
+                console.log( `This manager has ${ count } employees assigned to them. This action will unassign ${ count } employees` );
                 const { confirm } = await inquirer.prompt( await questions.confirm( 'change this Employee\'s', 'Role' ) );
 
                 if ( !confirm ) return;
@@ -192,6 +192,28 @@ const dbQueries = {
         catch ( error ) {
             console.error( error );
         }
+    },
+
+    updateEmployeeManager: async ( db ) => {
+        try {
+            const [[ { count } ]] = await db.execute( `SELECT count ( e.id ) AS count FROM employee e JOIN role r ON e.role_id = r.id WHERE manager_role = true` );
+            // create formatted table from data
+            if ( !count ) {
+                console.log( '\n', `No Managers Saved in Database. Please assign employees to Supervisory Roles`, '\n' );
+                return;
+            }
+
+            const { id } = await inquirer.prompt( await questions.selectEmployeeToUpdate( db ) );
+            const { manager_id } = await inquirer.prompt( await questions.selectNewManager( db, id ) );
+
+            await db.execute( 'UPDATE employee SET manager_id = ? WHERE id = ?', [ manager_id, id ] );
+
+            console.log( '\n', 'Manager has been updated', '\n' );
+
+            }
+            catch ( error ) {
+                console.error( error );
+            }
     },
 
     deleteEmployee: async ( db ) => {

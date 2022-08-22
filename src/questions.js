@@ -28,6 +28,10 @@ const questions = {
                 value: 'updateEmployeeRole'
             },
             {
+                name: 'Update Employee Manager',
+                value: 'updateEmployeeManager'
+            },
+            {
                 name: 'Delete Employee',
                 value: 'deleteEmployee'
             },
@@ -139,6 +143,18 @@ const questions = {
                 name: 'role_id',
                 message: 'Select a new Role for this employee',
                 choices: await getList.roles( db ),
+                loop: false
+            }
+        ]
+    },
+
+    selectNewManager: async ( db, id ) => {
+        return [
+            {
+                type: 'list',
+                name: 'manager_id',
+                message: 'Please select this Employee\'s new Manger?',
+                choices: await getList.managers( db, true, id ),
                 loop: false
             }
         ]

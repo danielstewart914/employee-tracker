@@ -1,8 +1,8 @@
 const getList = {
 
-     managers: async ( db, includeNone ) => {
+     managers: async ( db, includeNone, excludeId = 0 ) => {
         try {
-            const [ result ] = await db.execute( 'SELECT e.id AS value, CONCAT( first_name, \' \', last_name, \' - \', r.title ) AS name FROM employee e JOIN role r ON e.role_id = r.id WHERE manager_role = true' );
+            const [ result ] = await db.execute( 'SELECT e.id AS value, CONCAT( first_name, \' \', last_name, \' - \', r.title ) AS name FROM employee e JOIN role r ON e.role_id = r.id WHERE manager_role = true AND e.id != ?', [ excludeId ] );
             // add option for no manager
             if ( includeNone ) result.push( { name: 'None', value: null } );
             return result;
