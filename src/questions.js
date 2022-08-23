@@ -56,6 +56,10 @@ const questions = {
                 value: 'addDepartment'
             },
             {
+                name: 'Delete Department',
+                value: 'deleteDepartment'
+            },
+            {
                 name: 'View Department Budgets',
                 value: 'departmentBudget'
             },
@@ -172,12 +176,6 @@ const questions = {
                 message: 'Which Employee would you like to delete?',
                 choices: await getList.employees( db ),
                 loop:false
-            },
-            {
-                type: 'list',
-                name: 'confirm',
-                message: 'Are you sure you want to delete this Employee?',
-                choices: [ { name: 'Yes', value: true }, { name: 'No', value: false } ]
             }
         ]
     },
@@ -233,6 +231,18 @@ const questions = {
                 name: 'id',
                 message: 'Which Role would you like to delete?',
                 choices: await getList.roles( db ),
+                loop: false
+            }
+        ]
+    },
+
+    deleteDepartment: async ( db ) => {
+        return [
+            {
+                type: 'list',
+                name: 'id',
+                message: 'Which department would you like to delete?',
+                choices: await getList.dept( db ),
                 loop: false
             }
         ]

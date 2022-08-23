@@ -9,7 +9,7 @@ const allEmployeesQuery =
     `SELECT 
     e.id, 
     CONCAT( e.first_name, \' \', e.last_name ) AS name,
-    title, 
+    IFNULL( r.title, \'No Role\' ) AS title,
     CONCAT( \'$\', FORMAT( salary, 2 ) ) AS annual_salary, 
     IFNULL ( CONCAT( m.first_name, \' \', m.last_name ), \'None\' ) AS manager
     FROM employee e 
@@ -39,6 +39,8 @@ const allManagerQuery =
     LEFT JOIN role r ON e.role_id = r.id 
     WHERE manager_role = true`;
 
+
+// other long query strings
 const employeeNameById = 
     `SELECT
     CONCAT( e.first_name, \' \', e.last_name ) AS name
@@ -56,12 +58,21 @@ const employeesByManagerQuery =
 
 const deptBudgetQuery = 
     `SELECT 
-	d.name, 
-	CONCAT( '$', FORMAT( IFNULL( SUM ( salary ), 0 ), 2 ) ) AS annual_department_budget 
+	d.name AS department_name, 
+	CONCAT( '$', FORMAT( IFNULL( SUM ( salary ), 0 ), 2 ) ) AS annual_utilized_budget 
     FROM employee e 
     JOIN role r ON e.role_id = r.id
     RIGHT JOIN department d ON r.department_id = d.id
     GROUP BY d.id`;
+
+const roleAndEmpCountByDeptQuery = 
+    `SELECT COUNT( r.id ) AS role_count, 
+    COUNT( e.id ) AS employee_count,
+    d.name AS name
+    FROM employee e 
+    RIGHT JOIN role r ON e.role_id = r.id 
+    RIGHT JOIN department d ON r.department_id = d.id 
+    WHERE d.id = ?`;
 
 // get and display
 const getAndDisplayAll = async ( db, dataType ) => {
@@ -181,8 +192,8 @@ const dbQueries = {
             const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE manager_id = ?', [ id ] );
 
             if ( count ) {
-                console.log( `This manager has ${ count } employees assigned to them. This action will unassign ${ count } employees` );
-                const { confirm } = await inquirer.prompt( await questions.confirm( 'change this Employee\'s', 'Role' ) );
+                console.log( `This manager has ${ count } employees assigned to them.\nThis action will unassign the ${ count } employee(s) from reporting to a manager.` );
+                const { confirm } = await inquirer.prompt( questions.confirm( 'change this Employee\'s', 'Role' ) );
 
                 if ( !confirm ) return;
 
@@ -228,9 +239,15 @@ const dbQueries = {
     deleteEmployee: async ( db ) => {
         try {
             // query user for employee and a confirmation
-            const { id, confirm } = await inquirer.prompt( await questions.deleteEmployee( db ) );
-        
-            // if confirmation is negative return
+            const { id } = await inquirer.prompt( await questions.deleteEmployee( db ) );
+            const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE manager_id = ?', [ id ] );
+
+            if ( count ) {
+                console.log( `This manager has ${ count } employees assigned to them.\nThis action will unassign the ${ count } employee(s) from reporting to a manager.` );  
+            }
+
+            const { confirm } = await inquirer.prompt( questions.confirm( 'delete', 'Employee' ) );
+
             if ( !confirm ) return;
             
             // retrieve employee name
@@ -275,14 +292,35 @@ const dbQueries = {
             if ( count ) {
 
                 console.log( `Deleting this Role will effect ${ count } employees.` );
-
-                const { confirm } = await inquirer.prompt( questions.confirm( 'delete', 'Role' ) );
-                
-                if ( !confirm ) return;
             }
+
+            const { confirm } = await inquirer.prompt( questions.confirm( 'delete', 'Role' ) );
+                
+            if ( !confirm ) return;
             
             await db.execute( 'DELETE FROM role WHERE id = ?', [ id ] );
             console.log( 'Role has been deleted' );
+        }
+        catch ( error ) {
+            console.error( error );
+        }
+    },
+
+    deleteDepartment: async ( db ) => {
+        try {
+            const { id } = await inquirer.prompt( await questions.deleteDepartment( db ) );
+            const [[ { role_count, employee_count, name } ]] = await db.execute( roleAndEmpCountByDeptQuery, [ id ] );
+
+            if ( role_count || employee_count ) {
+                console.log( '\n',`Deleting this Department will also delete ${ role_count } Roles.\n Effecting ${ employee_count } employees assigned to those roles.`, '\n' );
+            }
+
+            const { confirm } = await inquirer.prompt( questions.confirm( 'delete', 'Department' ) );
+
+            if ( !confirm ) return;
+
+            await db.execute( 'DELETE FROM department WHERE id = ?', [ id ] );
+            console.log( `The ${ name } department and related roles have been deleted` );
         }
         catch ( error ) {
             console.error( error );
