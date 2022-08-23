@@ -56,6 +56,10 @@ const questions = {
                 value: 'addDepartment'
             },
             {
+                name: 'View Department Budgets',
+                value: 'departmentBudget'
+            },
+            {
                 name: 'Exit Application',
                 value: 'exit'
             }

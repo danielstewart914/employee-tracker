@@ -54,6 +54,15 @@ const employeesByManagerQuery =
     LEFT JOIN role r ON e.role_id = r.id
     WHERE e.manager_id = ?`;
 
+const deptBudgetQuery = 
+    `SELECT 
+	d.name, 
+	CONCAT( '$', FORMAT( IFNULL( SUM ( salary ), 0 ), 2 ) ) AS annual_department_budget 
+    FROM employee e 
+    JOIN role r ON e.role_id = r.id
+    RIGHT JOIN department d ON r.department_id = d.id
+    GROUP BY d.id`;
+
 // get and display
 const getAndDisplayAll = async ( db, dataType ) => {
     const options = {
@@ -274,6 +283,20 @@ const dbQueries = {
             
             await db.execute( 'DELETE FROM role WHERE id = ?', [ id ] );
             console.log( 'Role has been deleted' );
+        }
+        catch ( error ) {
+            console.error( error );
+        }
+    },
+
+    departmentBudget: async ( db ) => {
+        try {
+            const [ budgetData ] = await db.execute( deptBudgetQuery );
+
+            const budgetTable = createTable( 'Department Budgets', budgetData );
+
+            console.log( '\n' );
+            budgetTable.printTable();
         }
         catch ( error ) {
             console.error( error );

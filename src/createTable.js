@@ -33,7 +33,7 @@ const createTable = ( name, array ) => {
         let color;
 
         if ( i % 2 === 0 ) color = { color: 'blue' };
-        else color = { color: 'green' };
+        else color = { color: 'cyan' };
 
         tableObj.addRow( array[i], color );
     }
