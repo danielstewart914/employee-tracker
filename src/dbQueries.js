@@ -354,6 +354,8 @@ const dbQueries = {
             if ( !confirm ) return;
             // delete role
             await db.execute( 'DELETE FROM role WHERE id = ?', [ id ] );
+            // update manager id of any effected employees
+            await db.execute( 'UPDATE employee e JOIN employee m ON e.manager_id = m.id SET e.manager_id = NULL WHERE m.role_id IS NULL' );
             // log success
             logInfo.success( 'Role has been deleted' );
         }
