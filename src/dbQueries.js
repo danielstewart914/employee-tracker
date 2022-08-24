@@ -1,6 +1,5 @@
 const inquirer = require( 'inquirer' );
 const questions = require( './questions' );
-const getList = require( './getList' );
 const createTable = require( '../helpers/createTable' );
 const logInfo = require( '../helpers/logInfo' );
 
