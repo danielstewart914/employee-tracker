@@ -389,6 +389,8 @@ const dbQueries = {
 
             // delete department
             await db.execute( 'DELETE FROM department WHERE id = ?', [ id ] );
+            // update manager id of any effected employees
+            await db.execute( 'UPDATE employee e JOIN employee m ON e.manager_id = m.id SET e.manager_id = NULL WHERE m.role_id IS NULL' );
             // log success
             logInfo.success( `The ${ name } department and related roles have been deleted` );
         }
