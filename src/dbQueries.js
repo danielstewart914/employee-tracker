@@ -308,7 +308,7 @@ const dbQueries = {
     addRole: async ( db ) => {
         try {
             // count departments
-            const [[ { count } ]] = db.execute( 'SELECT COUNT( id ) AS count FROM department' );
+            const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM department' );
             if( !count ) {
                 // if there are no departments log an alert
                 logInfo.alert( 'You must have at least 1 Department before adding a Role' );
