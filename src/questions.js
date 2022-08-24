@@ -20,8 +20,28 @@ const questions = {
                 value: 'allManagers'
             },
             {
+                name: 'View all Roles',
+                value: 'allRoles'
+            },
+            {
+                name: 'View all Departments',
+                value: 'allDepartments'
+            },
+            {
+                name: 'View Department Budgets',
+                value: 'departmentBudget'
+            },
+            {
                 name: 'Add Employee',
                 value: 'addEmployee'
+            },
+            {
+                name: 'Add Role',
+                value: 'addRole'
+            },
+            {
+                name: 'Add Department',
+                value: 'addDepartment'
             },
             {
                 name: 'Update Employee Role',
@@ -36,32 +56,12 @@ const questions = {
                 value: 'deleteEmployee'
             },
             {
-                name: 'View all Roles',
-                value: 'allRoles'
-            },
-            {
-                name: 'Add Role',
-                value: 'addRole'
-            },
-            {
                 name: 'Delete Role',
                 value: 'deleteRole'
             },
             {
-                name: 'View all Departments',
-                value: 'allDepartments'
-            },
-            {
-                name: 'Add Department',
-                value: 'addDepartment'
-            },
-            {
                 name: 'Delete Department',
                 value: 'deleteDepartment'
-            },
-            {
-                name: 'View Department Budgets',
-                value: 'departmentBudget'
             },
             {
                 name: 'Exit Application',
