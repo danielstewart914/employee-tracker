@@ -15,10 +15,12 @@ const allEmployeesQuery =
     IFNULL ( CONCAT( m.first_name, \' \', m.last_name ), \'None\' ) AS manager
     FROM employee e 
     LEFT JOIN employee m ON e.manager_id = m.id 
-    LEFT JOIN role r ON e.role_id = r.id`;
+    LEFT JOIN role r ON e.role_id = r.id 
+    ORDER BY e.id`;
 
 const allDeptQuery =
-    `SELECT * FROM department`;
+    `SELECT * FROM department
+    ORDER BY id`;
 
 const allRolesQuery = 
     `SELECT 
@@ -28,7 +30,8 @@ const allRolesQuery =
     name AS Department,
     IF ( manager_role, 'Yes', NULL ) supervisory_role
     FROM role r 
-    JOIN department d ON r.department_id = d.id`;
+    JOIN department d ON r.department_id = d.id
+    ORDER BY r.id`;
 
 const allManagerQuery = 
     `SELECT 
@@ -38,7 +41,8 @@ const allManagerQuery =
     CONCAT( \'$\', FORMAT( salary, 2 ) ) AS annual_salary  
     FROM employee e  
     LEFT JOIN role r ON e.role_id = r.id 
-    WHERE manager_role = true`;
+    WHERE manager_role = true
+    ORDER BY e.id`;
 
 
 // other long query strings
@@ -55,7 +59,8 @@ const employeesByManagerQuery =
     title AS employee_role
     FROM employee e 
     LEFT JOIN role r ON e.role_id = r.id
-    WHERE e.manager_id = ?`;
+    WHERE e.manager_id = ?
+    ORDER BY e.id`;
 
 const deptBudgetQuery = 
     `SELECT 
