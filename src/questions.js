@@ -84,6 +84,18 @@ const questions = {
         
         
     },
+
+    select: async ( db, message, list ) => {
+        return [
+            {
+                type: 'list',
+                name: 'id',
+                message: message,
+                choices: await getList[list]( db ),
+                loop: false
+            }
+        ]
+    },
     
     deptName: {
         type: 'input',
@@ -132,54 +144,6 @@ const questions = {
          ];
     },
 
-    selectEmployeeToUpdate: async ( db ) => {
-        return [
-            {
-                type: 'list',
-                name: 'id',
-                message: 'Which Employee would you like to update?',
-                choices: await getList.employees( db ),
-                loop: false
-            }
-        ]
-    },
-
-    selectNewRole: async ( db ) => {
-        return [
-            {
-                type: 'list',
-                name: 'role_id',
-                message: 'Select a new Role for this employee',
-                choices: await getList.roles( db ),
-                loop: false
-            }
-        ]
-    },
-
-    selectNewManager: async ( db, id ) => {
-        return [
-            {
-                type: 'list',
-                name: 'manager_id',
-                message: 'Please select this Employee\'s new Manger?',
-                choices: await getList.managers( db, true, id ),
-                loop: false
-            }
-        ]
-    },
-
-    deleteEmployee: async ( db ) => {
-        return [
-            {
-                type: 'list',
-                name: 'id',
-                message: 'Which Employee would you like to delete?',
-                choices: await getList.employees( db ),
-                loop:false
-            }
-        ]
-    },
-
     roleInfo: async ( db ) => {
         const questions = [
             {
@@ -224,40 +188,16 @@ const questions = {
         return questions;
     },
 
-    deleteRole: async ( db ) =>{
+    selectNewManager: async ( db, id ) => {
         return [
             {
                 type: 'list',
-                name: 'id',
-                message: 'Which Role would you like to delete?',
-                choices: await getList.roles( db ),
+                name: 'manager_id',
+                message: 'Please select this Employee\'s new Manger?',
+                choices: await getList.managers( db, true, id ),
                 loop: false
             }
         ]
-    },
-
-    deleteDepartment: async ( db ) => {
-        return [
-            {
-                type: 'list',
-                name: 'id',
-                message: 'Which department would you like to delete?',
-                choices: await getList.dept( db ),
-                loop: false
-            }
-        ]
-    },
-
-    employeesByManager: async ( db ) => {
-        return [
-            { 
-                type: 'list',
-                name: 'id',
-                message: 'Please Select a manager.',
-                choices: await getList.managers( db, false ),
-                loop: false
-            }
-        ]  
     }
 }
 

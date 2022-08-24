@@ -9,7 +9,7 @@ const allEmployeesQuery =
     `SELECT 
     e.id, 
     CONCAT( e.first_name, \' \', e.last_name ) AS name,
-    IFNULL( r.title, \'No Role\' ) AS title,
+    IFNULL( r.title, \'No Role\' ) AS employee_role,
     CONCAT( \'$\', FORMAT( salary, 2 ) ) AS annual_salary, 
     IFNULL ( CONCAT( m.first_name, \' \', m.last_name ), \'None\' ) AS manager
     FROM employee e 
@@ -33,7 +33,7 @@ const allManagerQuery =
     `SELECT 
     e.id, 
     CONCAT( e.first_name, \' \', e.last_name ) AS name,
-    title, 
+    title AS manager_role, 
     CONCAT( \'$\', FORMAT( salary, 2 ) ) AS annual_salary  
     FROM employee e  
     LEFT JOIN role r ON e.role_id = r.id 
@@ -51,7 +51,7 @@ const employeesByManagerQuery =
     `SELECT 
     e.id, 
     CONCAT( e.first_name, \' \', e.last_name ) AS name,
-    title 
+    title AS employee_role
     FROM employee e 
     LEFT JOIN role r ON e.role_id = r.id
     WHERE e.manager_id = ?`;
@@ -125,7 +125,7 @@ const dbQueries = {
             // insert into database
             await db.execute( 'INSERT INTO department ( name ) VALUES ( ? )', [ name ] );
             // log success
-            console.log( '\n',`\'${ name }\' has been added to Departments.`, '\n' );
+            console.log( '\n', `${ name } has been added to Departments.`, '\n' );
         }
         catch ( error ) {
             console.error( error );
@@ -148,7 +148,7 @@ const dbQueries = {
             // insert into database
             await db.execute( 'INSERT INTO employee ( first_name, last_name, role_id, manager_id ) VALUES ( ?, ?, ?, ? )', employeeData );
             // log success
-            console.log( '\n',`\'${ answers.first_name } ${ answers.last_name }\' has been added to Employees.`, '\n' );
+            console.log( '\n', `${ answers.first_name } ${ answers.last_name } has been added to Employees.`, '\n' );
         }
         catch ( error ) {
             console.error( error );
@@ -164,7 +164,7 @@ const dbQueries = {
                 return;
             }
     
-            const { id } = await inquirer.prompt( await questions.employeesByManager( db ) );
+            const { id } = await inquirer.prompt( await questions.select( db, 'Please Select a manager.', 'managers' ) );
             const [ employees ] = await db.execute( employeesByManagerQuery, [ id ] );
 
             const [[ { name } ]] = await db.execute( employeeNameById, [ id ] );
@@ -188,7 +188,7 @@ const dbQueries = {
     updateEmployeeRole: async ( db ) => {
         try {
             // prompt user for employee and new role
-            const  { id } = await inquirer.prompt( await questions.selectEmployeeToUpdate( db ) );
+            const  { id } = await inquirer.prompt( await questions.select( db, 'Which Employee would you like to update?', 'employees' ) );
             const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE manager_id = ?', [ id ] );
 
             if ( count ) {
@@ -200,14 +200,14 @@ const dbQueries = {
                 await db.execute( 'UPDATE employee SET manager_id = NULL WHERE manager_id = ?', [ id ] );
             }
 
-            const { role_id } = await inquirer.prompt( await questions.selectNewRole( db ) );
+            const  role = await inquirer.prompt( await questions.select( db, 'Select a new Role for this employee', 'roles' ) );
 
             // set new role
-            await db.execute( 'UPDATE employee SET role_id = ? WHERE id = ?', [ role_id, id ] );
+            await db.execute( 'UPDATE employee SET role_id = ? WHERE id = ?', [ role.id, id ] );
 
             // show confirmation message
             const [[ updated ]] = await db.execute( 'SELECT CONCAT( first_name, \' \', last_name ) AS name, title from employee e JOIN role r ON e.role_id = r.id WHERE e.id = ?', [ id ] );
-            console.log( '\n',`${ updated.name }'s Role has been updated to ${ updated.title }.`, '\n' );
+            console.log( '\n', `${ updated.name }'s Role has been updated to ${ updated.title }.`, '\n' );
         }
         catch ( error ) {
             console.error( error );
@@ -223,7 +223,7 @@ const dbQueries = {
                 return;
             }
 
-            const { id } = await inquirer.prompt( await questions.selectEmployeeToUpdate( db ) );
+            const { id } = await inquirer.prompt( await questions.select( db, 'Which Employee would you like to update?', 'employees' ) );
             const { manager_id } = await inquirer.prompt( await questions.selectNewManager( db, id ) );
 
             await db.execute( 'UPDATE employee SET manager_id = ? WHERE id = ?', [ manager_id, id ] );
@@ -239,7 +239,7 @@ const dbQueries = {
     deleteEmployee: async ( db ) => {
         try {
             // query user for employee and a confirmation
-            const { id } = await inquirer.prompt( await questions.deleteEmployee( db ) );
+            const { id } = await inquirer.prompt( await questions.select( db, 'Which Employee would you like to delete?', 'employees' ) );
             const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE manager_id = ?', [ id ] );
 
             if ( count ) {
@@ -256,7 +256,7 @@ const dbQueries = {
             await db.execute( `DELETE FROM employee WHERE id = ?`, [ id ] );
 
             // display success message
-            console.log( '\n',`${ name } has been deleted.`, '\n' );
+            console.log( '\n', `${ name } has been deleted.`, '\n' );
 
         }
         catch ( error ) {
@@ -278,7 +278,7 @@ const dbQueries = {
 
             await db.execute( 'INSERT INTO role ( title, salary, department_id, manager_role ) VALUES ( ?, ?, ?, ? )', roleData );
 
-            console.log( '\n',`\'${ answers.title }\' has been added to Roles.`, '\n' );
+            console.log( '\n', `\'${ answers.title }\' has been added to Roles.`, '\n' );
         }
         catch ( error ) {
             console.error( error );
@@ -287,7 +287,7 @@ const dbQueries = {
 
     deleteRole: async ( db ) => {
         try {
-            const { id } = await inquirer.prompt( await questions.deleteRole( db ) );
+            const { id } = await inquirer.prompt( await questions.select( db, 'Which Role would you like to delete?', 'roles' ) );
             const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE role_id = ?', [ id ] );
             if ( count ) {
 
@@ -308,11 +308,11 @@ const dbQueries = {
 
     deleteDepartment: async ( db ) => {
         try {
-            const { id } = await inquirer.prompt( await questions.deleteDepartment( db ) );
+            const { id } = await inquirer.prompt( await questions.select( db, 'Which department would you like to delete?', 'dept' ) );
             const [[ { role_count, employee_count, name } ]] = await db.execute( roleAndEmpCountByDeptQuery, [ id ] );
 
             if ( role_count || employee_count ) {
-                console.log( '\n',`Deleting this Department will also delete ${ role_count } Roles.\n Effecting ${ employee_count } employees assigned to those roles.`, '\n' );
+                console.log( '\n', `Deleting this Department will also delete ${ role_count } Roles.\n Effecting ${ employee_count } employees assigned to those roles.`, '\n' );
             }
 
             const { confirm } = await inquirer.prompt( questions.confirm( 'delete', 'Department' ) );
