@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/danielstewart914/employee-tracker#readme",
   "dependencies": {
+    "chalk": "^4.1.0",
     "console-table-printer": "^2.11.0",
     "dotenv": "^16.0.1",
     "inquirer": "^8.2.4",

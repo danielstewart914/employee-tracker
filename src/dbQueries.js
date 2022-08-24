@@ -1,7 +1,8 @@
 const inquirer = require( 'inquirer' );
 const questions = require( './questions' );
 const getList = require( './getList' );
-const createTable = require( './createTable' );
+const createTable = require( '../helpers/createTable' );
+const logInfo = require( '../helpers/logInfo' );
 
 
 // Database query strings for get and display all
@@ -98,14 +99,16 @@ const getAndDisplayAll = async ( db, dataType ) => {
     try {
         // query database for data
         const [ data ] = await db.execute( options[ dataType ].query );
-        // create formatted table from data
         if ( !data.length ) {
-            console.log( '\n', `No ${ options[ dataType ].title } Saved in Database`, '\n' );
+            // if none of selected data exists in Database log an alert
+            logInfo.alert( `No ${ options[ dataType ].title } Saved in Database` );
             return;
         }
 
+        // create formatted table from data
         const dataTable = createTable( options[ dataType ].title, data );
 
+        // display table
         console.log( '\n' );
         dataTable.printTable();
 
@@ -125,7 +128,7 @@ const dbQueries = {
             // insert into database
             await db.execute( 'INSERT INTO department ( name ) VALUES ( ? )', [ name ] );
             // log success
-            console.log( '\n', `${ name } has been added to Departments.`, '\n' );
+            logInfo.success( `${ name } has been added to Departments.` );
         }
         catch ( error ) {
             console.error( error );
@@ -135,9 +138,9 @@ const dbQueries = {
     addEmployee: async ( db ) => {
         try {
             // check if there are roles to assign to employee
-            const roles = await getList.roles( db );
-            if ( !roles.length  ) {
-                console.log( 'You must have at least 1 Role before adding an Employee' );
+            const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM role' );
+            if ( !count ) {
+                logInfo.alert( 'You must have at least 1 Role before adding an Employee' );
                 return;
             }
 
@@ -148,7 +151,7 @@ const dbQueries = {
             // insert into database
             await db.execute( 'INSERT INTO employee ( first_name, last_name, role_id, manager_id ) VALUES ( ?, ?, ?, ? )', employeeData );
             // log success
-            console.log( '\n', `${ answers.first_name } ${ answers.last_name } has been added to Employees.`, '\n' );
+            logInfo.success( `${ answers.first_name } ${ answers.last_name } has been added to Employees.` );
         }
         catch ( error ) {
             console.error( error );
@@ -157,25 +160,32 @@ const dbQueries = {
 
      employeesByManager: async ( db ) => {
         try {
+            // count managers
             const [[ { count } ]] = await db.execute( 'SELECT COUNT( e.id ) AS count FROM employee e JOIN role r ON e.role_id = r.id WHERE manager_role = true' );
-    
             if( !count ) {
-                console.log( '\n', 'There are no Manager Roles assigned to any employees', '\n' );
+                // log an alert if there are none
+                logInfo.alert( 'There are no Manager Roles assigned to any employees' );
                 return;
             }
-    
+            
+            // prompt for manager
             const { id } = await inquirer.prompt( await questions.select( db, 'Please Select a manager.', 'managers' ) );
+            // select all employee that report to this manager
             const [ employees ] = await db.execute( employeesByManagerQuery, [ id ] );
 
+            // get manager's name from Database for Table Title
             const [[ { name } ]] = await db.execute( employeeNameById, [ id ] );
 
             if ( !employees.length ) {
-                console.log( '\n', `There are no employees assigned to ${ name }`, '\n' );
+                // if no employee's are assigned to this manager log an alert
+                logInfo.alert( `There are no employees assigned to ${ name }` );
                 return;
             }
 
+            // create table from list of employee's
             const employeeTable = createTable( `${ name }\'s Employees` , employees );
 
+            // display table
             console.log( '\n' );
             employeeTable.printTable();
 
@@ -187,19 +197,29 @@ const dbQueries = {
 
     updateEmployeeRole: async ( db ) => {
         try {
-            // prompt user for employee and new role
+            // check if any employees are saved in database
+            const [[ { e_count } ]] = await db.execute( 'SELECT COUNT( id ) AS e_count FROM employee' );
+            if ( !e_count ) {
+                logInfo.alert( 'There are no Employees saved in Database.' );
+                return;
+            }
+            // prompt user for employee to update
             const  { id } = await inquirer.prompt( await questions.select( db, 'Which Employee would you like to update?', 'employees' ) );
+            
+            // count employees that report to this employee/manager
             const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE manager_id = ?', [ id ] );
-
             if ( count ) {
-                console.log( `This manager has ${ count } employees assigned to them.\nThis action will unassign the ${ count } employee(s) from reporting to a manager.` );
+                // if any employees report to this employee/manager log a danger message
+                logInfo.danger( `This manager has ${ count } employees assigned to them.\nThis action will unassign the ${ count } employee(s) from reporting to a manager.` );
+                // ask to confirm
                 const { confirm } = await inquirer.prompt( questions.confirm( 'change this Employee\'s', 'Role' ) );
 
                 if ( !confirm ) return;
-
+                // set reporting employees manager_id to Null
                 await db.execute( 'UPDATE employee SET manager_id = NULL WHERE manager_id = ?', [ id ] );
             }
 
+            // prompt for new role
             const  role = await inquirer.prompt( await questions.select( db, 'Select a new Role for this employee', 'roles' ) );
 
             // set new role
@@ -207,7 +227,7 @@ const dbQueries = {
 
             // show confirmation message
             const [[ updated ]] = await db.execute( 'SELECT CONCAT( first_name, \' \', last_name ) AS name, title from employee e JOIN role r ON e.role_id = r.id WHERE e.id = ?', [ id ] );
-            console.log( '\n', `${ updated.name }'s Role has been updated to ${ updated.title }.`, '\n' );
+            logInfo.success( `${ updated.name }'s Role has been updated to ${ updated.title }.` );
         }
         catch ( error ) {
             console.error( error );
@@ -216,19 +236,30 @@ const dbQueries = {
 
     updateEmployeeManager: async ( db ) => {
         try {
+            // check if any employees are saved in database
+            const [[ { e_count } ]] = await db.execute( 'SELECT COUNT( id ) AS e_count FROM employee' );
+            if ( !e_count ) {
+                logInfo.alert( 'There are no Employees saved in Database.' );
+                return;
+            }
+            // check if any mangers are saved in database
             const [[ { count } ]] = await db.execute( `SELECT count ( e.id ) AS count FROM employee e JOIN role r ON e.role_id = r.id WHERE manager_role = true` );
-            // create formatted table from data
+
+            // if there are no managers alert user
             if ( !count ) {
-                console.log( '\n', `No Managers Saved in Database. Please assign employees to Supervisory Roles`, '\n' );
+            logInfo.alert( `No Managers Saved in Database. Please assign employees to Supervisory Roles` );
                 return;
             }
 
+            // prompt for employee to update
             const { id } = await inquirer.prompt( await questions.select( db, 'Which Employee would you like to update?', 'employees' ) );
+
+            // prompt for new manager
             const { manager_id } = await inquirer.prompt( await questions.selectNewManager( db, id ) );
 
+            // update and log success
             await db.execute( 'UPDATE employee SET manager_id = ? WHERE id = ?', [ manager_id, id ] );
-
-            console.log( '\n', 'Manager has been updated', '\n' );
+            logInfo.success( 'Manager has been updated' );
 
             }
             catch ( error ) {
@@ -238,14 +269,24 @@ const dbQueries = {
 
     deleteEmployee: async ( db ) => {
         try {
-            // query user for employee and a confirmation
-            const { id } = await inquirer.prompt( await questions.select( db, 'Which Employee would you like to delete?', 'employees' ) );
-            const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE manager_id = ?', [ id ] );
-
-            if ( count ) {
-                console.log( `This manager has ${ count } employees assigned to them.\nThis action will unassign the ${ count } employee(s) from reporting to a manager.` );  
+            // check if any employees are saved in database
+            const [[ { e_count } ]] = await db.execute( 'SELECT COUNT( id ) AS e_count FROM employee' );
+            if ( !e_count ) {
+                logInfo.alert( 'There are no Employees saved in Database.' );
+                return;
             }
 
+            // prompt user for employee to delete
+            const { id } = await inquirer.prompt( await questions.select( db, 'Which Employee would you like to delete?', 'employees' ) );
+            // count the number of employees that report to selected employee
+            const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE manager_id = ?', [ id ] );
+
+            // if any employees report to this employee log a danger message
+            if ( count ) {
+            logInfo.danger( `This manager has ${ count } employees assigned to them.\nThis action will unassign the ${ count } employee(s) from reporting to a manager.` );  
+            }
+
+            // prompt for confirmation
             const { confirm } = await inquirer.prompt( questions.confirm( 'delete', 'Employee' ) );
 
             if ( !confirm ) return;
@@ -256,7 +297,7 @@ const dbQueries = {
             await db.execute( `DELETE FROM employee WHERE id = ?`, [ id ] );
 
             // display success message
-            console.log( '\n', `${ name } has been deleted.`, '\n' );
+            logInfo.success( `${ name } has been deleted.` );
 
         }
         catch ( error ) {
@@ -266,19 +307,24 @@ const dbQueries = {
 
     addRole: async ( db ) => {
         try {
-            const dept = await getList.dept( db );
-            if( !dept.length ) {
-                console.log( 'You must have at least 1 Department before adding a Role' );
+            // count departments
+            const [[ { count } ]] = db.execute( 'SELECT COUNT( id ) AS count FROM department' );
+            if( !count ) {
+                // if there are no departments log an alert
+                logInfo.alert( 'You must have at least 1 Department before adding a Role' );
                 return;
             }
-
+            // prompt for role info
             const answers = await inquirer.prompt( await questions.roleInfo( db ) );
 
+            // convert object values to an array of data
             const roleData = Object.values( answers );
 
+            // save new role with array of data
             await db.execute( 'INSERT INTO role ( title, salary, department_id, manager_role ) VALUES ( ?, ?, ?, ? )', roleData );
 
-            console.log( '\n', `\'${ answers.title }\' has been added to Roles.`, '\n' );
+            // log success
+            logInfo.success( `\'${ answers.title }\' has been added to Roles.` );
         }
         catch ( error ) {
             console.error( error );
@@ -287,19 +333,29 @@ const dbQueries = {
 
     deleteRole: async ( db ) => {
         try {
+            // count roles
+            const [[ { r_count } ]] = await db.execute( 'SELECT COUNT( id ) AS r_count FROM role' );
+            if ( !r_count ) {
+                // log an alert if none exist
+                logInfo.alert( 'No Roles saved in Database.' );
+                return;
+            }
+            // prompt for role to delete
             const { id } = await inquirer.prompt( await questions.select( db, 'Which Role would you like to delete?', 'roles' ) );
+            // count employees assign to this role
             const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM employee WHERE role_id = ?', [ id ] );
             if ( count ) {
-
-                console.log( `Deleting this Role will effect ${ count } employees.` );
+                // log a danger message
+                logInfo.danger( `Deleting this Role will effect ${ count } employees.` );
             }
-
+            // prompt for confirmation
             const { confirm } = await inquirer.prompt( questions.confirm( 'delete', 'Role' ) );
                 
             if ( !confirm ) return;
-            
+            // delete role
             await db.execute( 'DELETE FROM role WHERE id = ?', [ id ] );
-            console.log( 'Role has been deleted' );
+            // log success
+            logInfo.success( 'Role has been deleted' );
         }
         catch ( error ) {
             console.error( error );
@@ -308,19 +364,33 @@ const dbQueries = {
 
     deleteDepartment: async ( db ) => {
         try {
+            // count departments
+            const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM department' );
+            if ( !count ) {
+                // log an alert if none exist
+                logInfo.alert( 'No Departments saved in Database.' );
+                return;
+            }
+
+            // prompt for department to delete
             const { id } = await inquirer.prompt( await questions.select( db, 'Which department would you like to delete?', 'dept' ) );
+            // count roles and employees assign to this department
             const [[ { role_count, employee_count, name } ]] = await db.execute( roleAndEmpCountByDeptQuery, [ id ] );
 
             if ( role_count || employee_count ) {
-                console.log( '\n', `Deleting this Department will also delete ${ role_count } Roles.\n Effecting ${ employee_count } employees assigned to those roles.`, '\n' );
+                // log a danger message
+                logInfo.danger( `Deleting this Department will also delete ${ role_count } Roles.\n Effecting ${ employee_count } employees assigned to those roles.` );
             }
 
+            // prompt for confirmation
             const { confirm } = await inquirer.prompt( questions.confirm( 'delete', 'Department' ) );
 
             if ( !confirm ) return;
 
+            // delete department
             await db.execute( 'DELETE FROM department WHERE id = ?', [ id ] );
-            console.log( `The ${ name } department and related roles have been deleted` );
+            // log success
+            logInfo.success( `The ${ name } department and related roles have been deleted` );
         }
         catch ( error ) {
             console.error( error );
@@ -329,10 +399,21 @@ const dbQueries = {
 
     departmentBudget: async ( db ) => {
         try {
+            // count departments
+            const [[ { count } ]] = await db.execute( 'SELECT COUNT( id ) AS count FROM department' );
+            if ( !count ) {
+                // log an alert if none exist
+                logInfo.alert( 'No Departments saved in Database.' );
+                return;
+            }
+
+            // retrieve budget info from database
             const [ budgetData ] = await db.execute( deptBudgetQuery );
 
+            // create table
             const budgetTable = createTable( 'Department Budgets', budgetData );
 
+            // display table
             console.log( '\n' );
             budgetTable.printTable();
         }
